@@ -8,8 +8,9 @@
 #include<omp.h>
 #include<mpi.h>
 
-void DDClassifier(struct model Model, int batch_size, int epochs){
+struct model DDClassifier(struct model Model, int batch_size, int epochs){
     
+    return Model;
 }
 
 #endif /* estimator_h */
