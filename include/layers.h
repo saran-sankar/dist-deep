@@ -25,24 +25,25 @@ struct model{
 struct layer Dense(struct layer prevLayer, int num_nodes){
     
     struct layer denseLayer;
-    float** W;
     int rows;
     int cols;
+    
+    denseLayer.num_nodes = num_nodes;
     
     rows = num_nodes;
     cols = prevLayer.num_nodes;
     
-    W = (float**) malloc(rows * sizeof(float));
-        
+    /*Initilize the weights*/
+    
+    denseLayer.W = (float**) malloc(rows * cols * sizeof(float));
+    
+    #pragma omp parallel for
     for (int i=0;i<rows;i++){
-        W[i] = (float*) malloc(cols * sizeof(float));
+        denseLayer.W[i] = (float*) malloc(cols * sizeof(float));
         for (int j=0;j<cols;j++){
-            W[i][j] = (rand() % 100)/100.0;
+            denseLayer.W[i][j] = (rand() % 100)/100.0;
         }
     }
-    
-    denseLayer.W = (float**) malloc(2 * sizeof(float));
-    denseLayer.W = W;
     
     return denseLayer;
 }
