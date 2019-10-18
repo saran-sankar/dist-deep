@@ -12,18 +12,20 @@
 struct layer{
     int num_nodes;
     
-    float** W;
-    float** b;
-    float** Z;
-    float** A;
+    float* W;
+    float* b;
+    float* Z;
+    float* A;
     
-    float** dW;
-    float** db;
-    float** dZ;
+    float* dW;
+    float* db;
+    float* dZ;
 };
 
 struct model{
-    struct layer* Layers;
+    int num_layers;
+    float * input;
+    struct layer* layers;
 };
 
 struct layer Dense(struct layer prevLayer, int num_nodes){
@@ -34,24 +36,23 @@ struct layer Dense(struct layer prevLayer, int num_nodes){
     
     denseLayer.num_nodes = num_nodes;
     
-    rows = num_nodes;
-    cols = prevLayer.num_nodes;
+    rows = prevLayer.num_nodes;
+    cols = num_nodes;
     
     /*Initilize the weights, bias, Z, activation matrix and and updation matrices*/
     
-    denseLayer.W = (float**) malloc(rows * cols * sizeof(float));
+    denseLayer.W = (float*) malloc(rows * cols * sizeof(float));
     //denseLayer.b =
     //denseLayer.Z =
     //denseLayer.A =
-    denseLayer.dW = (float**) malloc(rows * cols * sizeof(float));
+    denseLayer.dW = (float*) malloc(rows * cols * sizeof(float));
     //denseLayer.db =
     //denseLayer.dZ =
     
     #pragma omp parallel for
     for (int i=0;i<rows;i++){
-        denseLayer.W[i] = (float*) malloc(cols * sizeof(float));
         for (int j=0;j<cols;j++){
-            denseLayer.W[i][j] = (rand() % 100)/100.0;
+            denseLayer.W[i*rows+j] = (rand() % 100)/100.0;
         }
     }
     
