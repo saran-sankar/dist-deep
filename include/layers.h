@@ -47,8 +47,6 @@ struct layer Dense(struct layer prevLayer, int num_nodes){
     
     denseLayer.W = (float*) malloc(rows * cols * sizeof(float));
     //denseLayer.b =
-    //denseLayer.Z =
-    //denseLayer.A =
     denseLayer.dW = (float*) malloc(rows * cols * sizeof(float));
     //denseLayer.db =
     //denseLayer.dZ =

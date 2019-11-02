@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 
     int epochs = 5;
     
-    model = DDClassifier(model, batch_size, epochs);
+    model = DDClassifier(model, Y, num_samples, batch_size, epochs);
     
     return 0;
 }
