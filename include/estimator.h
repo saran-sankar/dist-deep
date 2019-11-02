@@ -9,8 +9,9 @@
 #include<mpi.h>
 #include<math.h>
 #include<fprop.h>
+#include<bprop.h>
 
-struct model DDClassifier(struct model model, int* Y, int num_samples, int batch_size, int epochs){
+struct model DDClassifier(struct model model, int* Y, int num_samples, int batch_size, int epochs, float learning_rate){
     
     struct layer* layers;
     float* model_input;
@@ -29,7 +30,10 @@ struct model DDClassifier(struct model model, int* Y, int num_samples, int batch
     
     model_input = model.input;
     
+    /*Train model*/
     for (int i=0; i<epochs; i++){
+        
+        float epoch_loss = 0.0;
         
         /*Cannot be parallelized*/
         for (int batch=0; batch<num_batches; batch++){
@@ -64,29 +68,10 @@ struct model DDClassifier(struct model model, int* Y, int num_samples, int batch
             
             y_hat = model.layers[num_layers-1].A;
             
-            /*Softmax*/
-            
             int num_classes = model.layers[num_layers-1].num_nodes;
             
-            float* y_hat_sums = malloc(batch_size * sizeof(float));
-            for (int j=0; j<batch_size; j++){
-                y_hat_sums[j] = 0;
-            }
-            #pragma omp parallel for collapse(2)
-            for (int j=0; j<num_classes; j++){
-                for (int k=0; k<batch_size; k++){
-                    y_hat_sums[k] += y_hat[j*batch_size + k];
-                }
-            }
-            #pragma omp parallel for collapse(2)
-            for (int j=0; j<num_classes; j++){
-                for (int k=0; k<batch_size; k++){
-                    y_hat[j*batch_size + k] /= y_hat_sums[k];
-                }
-            }
-            
             if (rank==2){
-                printf("\n\nEpoch %d, Forward propagation. Softmax output\n", i+1);
+                printf("\n\nEpoch %d, Forward propagation. Output\n", i+1);
                 for (int j=0; j<num_classes * batch_size;j++){
                     printf("%f ", y_hat[j]);
                 }
@@ -107,20 +92,24 @@ struct model DDClassifier(struct model model, int* Y, int num_samples, int batch
                 }
             }
             
-            loss /= batch_size*num_classes;
+            loss /= -batch_size*num_classes;
+            epoch_loss += loss;
             
-            if (rank==2){
-                printf("\n\nloss:%f\n", loss);
-            }
+            model = BProp(model, y_hat, y, batch_size, learning_rate);
             
         }
+        
+        epoch_loss /= num_batches;
+        if (rank==2){
+            printf("\n\n\n\n\n\nloss: %f\n\n\n\n\n\n", epoch_loss);
+        }
+        
         
     }
     
     MPI_Barrier(MPI_COMM_WORLD);
     
     //printf("%f Status: OK\n", input[9]);
-    printf("\n");
     return model;
 }
 

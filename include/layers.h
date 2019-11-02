@@ -49,12 +49,11 @@ struct layer Dense(struct layer prevLayer, int num_nodes){
     //denseLayer.b =
     denseLayer.dW = (float*) malloc(rows * cols * sizeof(float));
     //denseLayer.db =
-    //denseLayer.dZ =
     
     #pragma omp parallel for
     for (int i=0;i<rows;i++){
         for (int j=0;j<cols;j++){
-            denseLayer.W[i*rows+j] = (rand() % 100)/100.0;
+            denseLayer.W[i*rows+j] = -1 + (rand() % 100)/50.0;
         }
     }
     
