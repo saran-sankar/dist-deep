@@ -2,16 +2,42 @@
 #include <layers.h>
 #include <estimator.h>
 
-/*training data*/
-float X[2][10] = {{1.3, 5.4, 6.4, 7.6, 6.4, 3.5, 6.5, 5.4, 2.8, 7.1},
-    {1.4, 7.2, 3.4, 9.3, 3.1, 3.0, 6.1, 8.2, 2.5, 3.8}};
-float Y[10] = {1,0,2,0,0,1,2,1,1,2};
-
 int main(int argc, char *argv[])
 {
+    
+    /*Load data*/
+    
+    int num_features = 4, num_samples = 150;
+    int batch_size = 10;
+    
+    float* X = malloc(num_samples*num_features*sizeof(float));
+    int* Y = malloc(num_samples*sizeof(float));
+    float f1, f2, f3, f4;
+    int c;
+    
+    FILE *file;
+    file = fopen("iris.txt", "r");
+    for (int i=0;i<num_samples/batch_size;i++){
+        for (int j=0; j<batch_size; j++){
+            
+            fscanf(file, "%f,%f,%f,%f,%d", &f1, &f2, &f3, &f4, &c);
+
+            X[i*num_features*batch_size + j+0] = f1;
+            X[i*num_features*batch_size + j+batch_size] = f2;
+            X[i*num_features*batch_size + j+2*batch_size] = f3;
+            X[i*num_features*batch_size + j+3*batch_size] = f4;
+            
+            Y[i*batch_size + j] = c;
+            
+        }
+    }
+    
+    /*Model*/
+    
     struct model model;
-    int num_features, num_samples, num_layers = 3; /*input layer not counted*/
+    int num_layers = 3; /*input layer not counted*/
     struct layer input, dense1, dense2, output;
+    
     
     /*Configure the model*/
     
@@ -20,17 +46,11 @@ int main(int argc, char *argv[])
     
     /*Configure input layer*/
     
-    num_features = sizeof(X) / sizeof(X[0]); /*rows in input*/
-    num_samples = sizeof(X[0]) / sizeof(float);
     input.num_nodes = num_features;
     input.A = (float*) malloc(sizeof(X));
+    input.A = X;
     
-    int k = 0;
-    for (int i=0;i<num_samples;i++){
-        for (int j=0;j<num_features;j++)
-        input.A[k++] = X[j][i];
-    }
-    
+    model.num_features = num_features;
     model.input = input.A;
 
     /*Add layers to the model*/
@@ -43,11 +63,10 @@ int main(int argc, char *argv[])
     model.layers[2] = output;
     
     /*Train the model*/
-    
-    int m = 2;
+
     int epochs = 5;
     
-    model = DDClassifier(model, m, epochs);
+    model = DDClassifier(model, batch_size, epochs);
     
     return 0;
 }

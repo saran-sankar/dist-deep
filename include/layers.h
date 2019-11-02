@@ -11,6 +11,7 @@
 
 struct layer{
     int num_nodes;
+    int prev_num_nodes;
     
     float* W;
     float* b;
@@ -24,6 +25,7 @@ struct layer{
 
 struct model{
     int num_layers;
+    int num_features;
     float * input;
     struct layer* layers;
 };
@@ -38,6 +40,8 @@ struct layer Dense(struct layer prevLayer, int num_nodes){
     
     rows = prevLayer.num_nodes;
     cols = num_nodes;
+    
+    denseLayer.prev_num_nodes = rows;
     
     /*Initilize the weights, bias, Z, activation matrix and and updation matrices*/
     
