@@ -48,15 +48,29 @@ struct output FProp(float * input, struct layer layer, int batch_size, int rank)
     
     float* sub_Z = malloc(cols * batch_size * sizeof(float));
     
-    //printf("%d\n",layer.prev_num_nodes);
+    /*Calculate Z*/
     
     if (rank < layer.prev_num_nodes){
+        
+        /*Display process details*/
+        
+        char processor_name [MPI_MAX_PROCESSOR_NAME];
+        int nprocs, resultlen;
+        
+        MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
+        
+        MPI_Get_processor_name(processor_name, &resultlen);
+        
+        printf("Pocess %d of %d calculating Z on %s\n", rank, nprocs, processor_name);
+        fflush(stdout);
+        
 #pragma omp parallel for collapse(2)
         for (int i=0; i<cols; i++){
             for (int j=0; j<batch_size; j++){
                 sub_Z[i*batch_size + j] = sub_W[i] * sub_input[j];
             }
         }
+        
     }
     else{
 #pragma omp parallel for collapse(2)
@@ -68,8 +82,6 @@ struct output FProp(float * input, struct layer layer, int batch_size, int rank)
     }
     
     MPI_Barrier(MPI_COMM_WORLD);
-    
-    //printf("rank = %d\n", rank);
     
     float* Z = malloc(cols * batch_size * sizeof(float));
     
@@ -92,26 +104,14 @@ struct output FProp(float * input, struct layer layer, int batch_size, int rank)
     
     float* A = malloc(cols * batch_size * sizeof(float));
     
+    if (rank == 2){
+        printf("All processes calculating A\n");
+    }
+    
 #pragma omp parallel for collapse(2)
     for (int i=0; i<cols; i++){
         for (int j=0; j<batch_size; j++){
             A[i*batch_size + j] = 1.0/(1+exp(-Z[i*batch_size + j]));
-        }
-    }
-    
-    if (rank == 2){
-        for (int i=0; i<cols; i++){
-            for (int j=0; j<batch_size; j++){
-                //printf("%f ", sub_Z[i*batch_size + j]);
-            }
-        }
-    }
-    
-    if (rank == 2){
-        for (int i=0; i<cols; i++){
-            for (int j=0; j<batch_size; j++){
-                //printf("%f ", A[i*batch_size + j]);
-            }
         }
     }
     

@@ -35,8 +35,8 @@ int main(int argc, char *argv[])
     /*Model*/
     
     struct model model;
-    int num_layers = 3; /*input layer not counted*/
-    struct layer input, dense1, dense2, output;
+    int num_layers = 4; /*input layer not counted*/
+    struct layer input, dense1, dense2, dense3, output;
     
     
     /*Configure the model*/
@@ -59,8 +59,10 @@ int main(int argc, char *argv[])
     model.layers[0] = dense1;
     dense2 = Dense(dense1, 6);
     model.layers[1] = dense2;
-    output = Dense(dense2, 3);
-    model.layers[2] = output;
+    dense3 = Dense(dense2, 6);
+    model.layers[2] = dense3;
+    output = Dense(dense3, 3);
+    model.layers[3] = output;
     
     /*Train the model*/
 
