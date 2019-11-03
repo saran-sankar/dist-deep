@@ -71,9 +71,9 @@ struct model DDClassifier(struct model model, int* Y, int num_samples, int batch
             int num_classes = model.layers[num_layers-1].num_nodes;
             
             if (rank==2){
-                printf("\n\nEpoch %d, Forward propagation. Output\n", i+1);
+                //printf("\n\nEpoch %d, Forward propagation. Output\n", i+1);
                 for (int j=0; j<num_classes * batch_size;j++){
-                    printf("%f ", y_hat[j]);
+                    //printf("%f ", y_hat[j]);
                 }
             }
             

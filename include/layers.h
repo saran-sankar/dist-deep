@@ -46,15 +46,19 @@ struct layer Dense(struct layer prevLayer, int num_nodes){
     /*Initilize the weights, bias, Z, activation matrix and and updation matrices*/
     
     denseLayer.W = (float*) malloc(rows * cols * sizeof(float));
-    //denseLayer.b =
+    denseLayer.b = (float*) malloc(cols * sizeof(float));
     denseLayer.dW = (float*) malloc(rows * cols * sizeof(float));
-    //denseLayer.db =
+    denseLayer.db = (float*) malloc(cols * sizeof(float));
     
-    #pragma omp parallel for
+#pragma omp parallel for collapse(2)
     for (int i=0;i<rows;i++){
         for (int j=0;j<cols;j++){
             denseLayer.W[i*rows+j] = -1 + (rand() % 100)/50.0;
         }
+    }
+#pragma omp parallel for
+    for (int i=0;i<cols;i++){
+        denseLayer.b[i] = 0.0;
     }
     
     return denseLayer;

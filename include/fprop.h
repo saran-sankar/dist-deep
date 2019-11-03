@@ -12,6 +12,7 @@
 float* FProp(float * input, struct layer layer, int batch_size, int rank){
     
     float* W = layer.W;
+    float* b = layer.b;
     int cols = layer.num_nodes;
     
     float* sub_W = malloc(cols*sizeof(float));  /*sizeof(W[0])*/
@@ -77,9 +78,11 @@ float* FProp(float * input, struct layer layer, int batch_size, int rank){
     
     MPI_Barrier(MPI_COMM_WORLD);
     
-#pragma omp parallel for
-    for (int i=0; i<cols * batch_size; i++){
-        Z[i] = 1.0/(1+exp(-Z[i]));
+#pragma omp parallel for collapse(2)
+    for (int i=0; i<cols; i++){
+        for (int j=0; j<batch_size; j++){
+            Z[i*batch_size + j] = 1.0/(1+exp(-(Z[i*batch_size + j]) + b[i]));
+        }
     }
     
     if (rank == 2){
