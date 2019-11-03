@@ -68,8 +68,10 @@ int main(int argc, char *argv[])
 
     int epochs = 8;
     float learning_rate = 0.1;
+    char *v = argv[1];
+    int verbose = atoi(v);
     
-    model = DDClassifier(model, Y, num_samples, batch_size, epochs, learning_rate);
+    model = DDClassifier(model, Y, num_samples, batch_size, epochs, learning_rate, verbose);
     
     return 0;
 }

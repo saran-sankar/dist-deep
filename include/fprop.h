@@ -14,7 +14,7 @@ struct output{
     float* Z;
 };
 
-struct output FProp(float * input, struct layer layer, int batch_size, int rank){
+struct output FProp(float * input, struct layer layer, int batch_size, int rank, int verbose){
     
     float* W = layer.W;
     float* b = layer.b;
@@ -61,8 +61,10 @@ struct output FProp(float * input, struct layer layer, int batch_size, int rank)
         
         MPI_Get_processor_name(processor_name, &resultlen);
         
-        printf("Pocess %d of %d calculating Z on %s\n", rank, nprocs, processor_name);
-        fflush(stdout);
+        if (verbose>1){
+            printf("Pocess %d of %d calculating Z on %s\n", rank, nprocs, processor_name);
+            fflush(stdout);
+        }
         
 #pragma omp parallel for collapse(2)
         for (int i=0; i<cols; i++){
@@ -104,7 +106,7 @@ struct output FProp(float * input, struct layer layer, int batch_size, int rank)
     
     float* A = malloc(cols * batch_size * sizeof(float));
     
-    if (rank == 2){
+    if (rank == 2 && verbose>1){
         printf("All processes calculating A\n");
     }
     

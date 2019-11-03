@@ -9,12 +9,12 @@
 #include<mpi.h>
 #include<math.h>
 
-struct model BProp(struct model model, float* y_hat, int* y, int batch_size, float learning_rate, int rank){
+struct model BProp(struct model model, float* y_hat, int* y, int batch_size, float learning_rate, int rank, int verbose){
     
     int num_layers = model.num_layers;
     int num_classes = model.layers[num_layers-1].num_nodes;
     
-    if (rank == 2){
+    if (rank == 2 && verbose>0){
         printf("\nStarting Backpropagation..\n\n");
     }
     
@@ -82,7 +82,7 @@ struct model BProp(struct model model, float* y_hat, int* y, int batch_size, flo
         
         /*Update weight*/
         
-        if (rank == 2){
+        if (rank == 2 && verbose>1){
             printf("Backpropagation, Layer %d, Updating weight and bias\n", num_layers-i+1);
         }
         

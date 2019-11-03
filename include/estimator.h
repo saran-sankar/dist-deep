@@ -11,7 +11,7 @@
 #include<fprop.h>
 #include<bprop.h>
 
-struct model DDClassifier(struct model model, int* Y, int num_samples, int batch_size, int epochs, float learning_rate){
+struct model DDClassifier(struct model model, int* Y, int num_samples, int batch_size, int epochs, float learning_rate, int verbose){
     
     struct layer* layers;
     float* model_input;
@@ -54,23 +54,27 @@ struct model DDClassifier(struct model model, int* Y, int num_samples, int batch
             
             MPI_Barrier(MPI_COMM_WORLD);
             
-            if (rank==2){
+            if (rank==2 && verbose>0){
                 printf("\n\nEpoch %d, Batch %d \n\nForward propagation. Layer %d\n", i+1, batch+1, 0+1);
             }
             
-            output = FProp(input, model.layers[0], batch_size, rank);
+            output = FProp(input, model.layers[0], batch_size, rank, verbose);
             model.layers[0].Z = output.Z;
             model.layers[0].A = output.A;
             
+            MPI_Barrier(MPI_COMM_WORLD);
+            
             /*Cannot be parallelized*/
             for (int j=1; j<num_layers; j++){
-                if (rank==2){
+                if (rank==2 && verbose>0){
                     printf("\n\nEpoch %d, Batch %d \n\nForward propagation. Layer %d\n", i+1, batch+1, j+1);
                 }
                 
-                output = FProp(model.layers[j-1].A, model.layers[j], batch_size, rank);
+                output = FProp(model.layers[j-1].A, model.layers[j], batch_size, rank, verbose);
                 model.layers[j].Z = output.Z;
                 model.layers[j].A = output.A;
+                
+                MPI_Barrier(MPI_COMM_WORLD);
             }
             
             y_hat = model.layers[num_layers-1].A;
@@ -78,7 +82,7 @@ struct model DDClassifier(struct model model, int* Y, int num_samples, int batch
             int num_classes = model.layers[num_layers-1].num_nodes;
             
             if (rank==2){
-                if (rank==2){
+                if (rank==2 && verbose>0){
                     printf("\nCalculating output..\n");
                 }
                 //printf("\n\nEpoch %d, Forward propagation. Output\n", i+1);
@@ -89,7 +93,7 @@ struct model DDClassifier(struct model model, int* Y, int num_samples, int batch
             
             /*Loss*/
             
-            if (rank==2){
+            if (rank==2 && verbose>0){
                 printf("Calculating loss..\n");
             }
             
@@ -109,7 +113,9 @@ struct model DDClassifier(struct model model, int* Y, int num_samples, int batch
             loss /= -batch_size*num_classes;
             epoch_loss += loss;
             
-            model = BProp(model, y_hat, y, batch_size, learning_rate, rank);
+            model = BProp(model, y_hat, y, batch_size, learning_rate, rank, verbose);
+            
+            MPI_Barrier(MPI_COMM_WORLD);
             
         }
         
