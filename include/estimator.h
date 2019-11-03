@@ -30,6 +30,8 @@ struct model DDClassifier(struct model model, int* Y, int num_samples, int batch
     
     model_input = model.input;
     
+    struct output output;
+    
     /*Train model*/
     for (int i=0; i<epochs; i++){
         
@@ -56,14 +58,19 @@ struct model DDClassifier(struct model model, int* Y, int num_samples, int batch
                 //printf("\n\nEpoch %d, Forward propagation. Layer %d\n", i+1, 0+1);
             }
             
-            model.layers[0].A = FProp(input, model.layers[0], batch_size, rank);
+            output = FProp(input, model.layers[0], batch_size, rank);
+            model.layers[0].Z = output.Z;
+            model.layers[0].A = output.A;
             
             /*Cannot be parallelized*/
             for (int j=1; j<num_layers; j++){
                 if (rank==2){
                     //printf("\n\nEpoch %d, Forward propagation. Layer %d\n", i+1, j+1);
                 }
-                model.layers[j].A = FProp(model.layers[j-1].A, model.layers[j], batch_size, rank);
+                
+                output = FProp(model.layers[j-1].A, model.layers[j], batch_size, rank);
+                model.layers[j].Z = output.Z;
+                model.layers[j].A = output.A;
             }
             
             y_hat = model.layers[num_layers-1].A;

@@ -9,7 +9,12 @@
 #include<mpi.h>
 #include<math.h>
 
-float* FProp(float * input, struct layer layer, int batch_size, int rank){
+struct output{
+    float* A;
+    float* Z;
+};
+
+struct output FProp(float * input, struct layer layer, int batch_size, int rank){
     
     float* W = layer.W;
     float* b = layer.b;
@@ -81,7 +86,16 @@ float* FProp(float * input, struct layer layer, int batch_size, int rank){
 #pragma omp parallel for collapse(2)
     for (int i=0; i<cols; i++){
         for (int j=0; j<batch_size; j++){
-            Z[i*batch_size + j] = 1.0/(1+exp(-(Z[i*batch_size + j]) + b[i]));
+            Z[i*batch_size + j] = Z[i*batch_size + j] + b[i];
+        }
+    }
+    
+    float* A = malloc(cols * batch_size * sizeof(float));
+    
+#pragma omp parallel for collapse(2)
+    for (int i=0; i<cols; i++){
+        for (int j=0; j<batch_size; j++){
+            A[i*batch_size + j] = 1.0/(1+exp(-Z[i*batch_size + j]));
         }
     }
     
@@ -96,12 +110,16 @@ float* FProp(float * input, struct layer layer, int batch_size, int rank){
     if (rank == 2){
         for (int i=0; i<cols; i++){
             for (int j=0; j<batch_size; j++){
-                //printf("%f ", Z[i*batch_size + j]);
+                //printf("%f ", A[i*batch_size + j]);
             }
         }
     }
     
-    float* output = Z;
+    struct output output;
+    
+    output.Z = Z;
+    output.A = A;
+    
     return output;
 }
 

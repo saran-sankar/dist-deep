@@ -37,14 +37,15 @@ struct model BProp(struct model model, float* y_hat, int* y, int batch_size, flo
     float* W;
     float* b;
     float* A;
-    float* A_b;
-    float* dZA_b;
+    float* Z;
+    float* Z_b;
+    float* dZZ_b;
     float* I_A_prev;
     float* dZ_prev;
-
-    dZA_b = malloc(batch_size*batch_size*sizeof(float));
     
-    for (int i=1; i<2; i++){
+    dZZ_b = malloc(batch_size*batch_size*sizeof(float));
+    
+    for (int i=1; i<num_layers; i++){
         
         A_prev = model.layers[num_layers-(i+1)].A; // shape: (n[N-1], m)
         dZ = model.layers[num_layers-i].dZ; // shape: (n[N], m)
@@ -56,7 +57,7 @@ struct model BProp(struct model model, float* y_hat, int* y, int batch_size, flo
         
         /*Find the derivative of weight with respect to loss (sigmoid activations)*/
         
-        #pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(2)
         for (int j=0; j<num_nodes_prev; j++){
             for (int k=0; k<num_nodes; k++){
                 dW[j*num_nodes + k] = 0.0;
@@ -97,30 +98,32 @@ struct model BProp(struct model model, float* y_hat, int* y, int batch_size, flo
         
         /*Find the derivative of Z of inner layers with respect to loss (sigmoid activations)*/
         
-        A = model.layers[num_layers-i].A; // shape: (n[N], m)
+        Z = model.layers[num_layers-i].Z; // shape: (n[N], m)
         
-        A_b = malloc(num_nodes*batch_size*sizeof(float));
+        Z_b = malloc(num_nodes*batch_size*sizeof(float)); // Z-b
         
 #pragma omp parallel for collapse(2)
         for (int j=0; j<num_nodes; j++){
             for(int k=0; k<batch_size; k++){
-                A_b[j*batch_size + k] = A[j*batch_size + k] - b[j];
+                Z_b[j*batch_size + k] = Z[j*batch_size + k] - b[j];
             }
         }
         
 #pragma omp parallel for collapse(2)
         for (int j=0; j<batch_size; j++){
             for (int k=0; k<batch_size; k++){
-                dZA_b[j*batch_size + k] = 0.0;
+                dZZ_b[j*batch_size + k] = 0.0;
                 for (int n=0; n<num_nodes; n++){
-                    //dZA_b[j*batch_size + k] += A_b[j + n*batch_size] * dZ[k + n*batch_size];
-                    dZA_b[j*batch_size + k] += dZ[j + n*batch_size] * A_b[k + n*batch_size];
+                    //dZZ_b[j*batch_size + k] += Z_b[j + n*batch_size] * dZ[k + n*batch_size];
+                    dZZ_b[j*batch_size + k] += dZ[j + n*batch_size] * Z_b[k + n*batch_size];
                 }
             }
         }
         
+        A = model.layers[num_layers-i].A; // shape: (n[N], m)
+        
         I_A_prev = malloc(num_nodes_prev*batch_size*sizeof(float));
-    
+        
         for(int j=0; j<num_nodes_prev*batch_size; j++){
             I_A_prev[j] = 1 - A_prev[j];
         }
@@ -128,16 +131,17 @@ struct model BProp(struct model model, float* y_hat, int* y, int batch_size, flo
         dZ_prev = model.layers[num_layers-(i+1)].dZ; // shape: (n[N-1], m)
         dZ_prev = malloc(num_nodes_prev*batch_size*sizeof(float));
         
+#pragma omp parallel for collapse(2)
         for (int j=0; j<num_nodes_prev; j++){
             for (int k=0; k<batch_size; k++){
                 dZ_prev[j*batch_size + k] = 0.0;
                 for (int m=0; m<batch_size; m++){
-                    dZ_prev[j*batch_size + k] += I_A_prev[j*batch_size + m] * dZA_b[k*batch_size + m];
+                    dZ_prev[j*batch_size + k] += I_A_prev[j*batch_size + m] * dZZ_b[k*batch_size + m];
                 }
             }
         }
         
-       model.layers[num_layers-(i+1)].dZ = dZ_prev;
+        model.layers[num_layers-(i+1)].dZ = dZ_prev;
         
     }
     

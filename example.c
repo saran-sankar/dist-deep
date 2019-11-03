@@ -64,8 +64,8 @@ int main(int argc, char *argv[])
     
     /*Train the model*/
 
-    int epochs = 10;
-    float learning_rate = 0.01;
+    int epochs = 8;
+    float learning_rate = 0.1;
     
     model = DDClassifier(model, Y, num_samples, batch_size, epochs, learning_rate);
     
