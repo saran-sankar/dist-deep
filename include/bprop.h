@@ -49,7 +49,7 @@ struct model BProp(struct model model, float* y_hat, int* y, int batch_size, flo
     
     dZZ_b = malloc(batch_size*batch_size*sizeof(float));
     
-    for (int i=1; i<num_layers; i++){
+    for (int i=1; i<=num_layers; i++){
         
         A_prev = model.layers[num_layers-(i+1)].A; // shape: (n[N-1], m)
         dZ = model.layers[num_layers-i].dZ; // shape: (n[N], m)
@@ -83,7 +83,7 @@ struct model BProp(struct model model, float* y_hat, int* y, int batch_size, flo
         /*Update weight*/
         
         if (rank == 2){
-            printf("Backpropagation, Layer %d, Updating weight and bias\n", num_layers-i);
+            printf("Backpropagation, Layer %d, Updating weight and bias\n", num_layers-i+1);
         }
         
         W = model.layers[num_layers-i].W;
@@ -106,51 +106,54 @@ struct model BProp(struct model model, float* y_hat, int* y, int batch_size, flo
         
         /*Find the derivative of Z of inner layers with respect to loss (sigmoid activations)*/
         
-        Z = model.layers[num_layers-i].Z; // shape: (n[N], m)
-        
-        Z_b = malloc(num_nodes*batch_size*sizeof(float)); // Z-b
-        
+        if (i != num_layers){
+            
+            Z = model.layers[num_layers-i].Z; // shape: (n[N], m)
+            
+            Z_b = malloc(num_nodes*batch_size*sizeof(float)); // Z-b
+            
 #pragma omp parallel for collapse(2)
-        for (int j=0; j<num_nodes; j++){
-            for(int k=0; k<batch_size; k++){
-                Z_b[j*batch_size + k] = Z[j*batch_size + k] - b[j];
-            }
-        }
-        
-#pragma omp parallel for collapse(2)
-        for (int j=0; j<batch_size; j++){
-            for (int k=0; k<batch_size; k++){
-                dZZ_b[j*batch_size + k] = 0.0;
-                for (int n=0; n<num_nodes; n++){
-                    //dZZ_b[j*batch_size + k] += Z_b[j + n*batch_size] * dZ[k + n*batch_size];
-                    dZZ_b[j*batch_size + k] += dZ[j + n*batch_size] * Z_b[k + n*batch_size];
+            for (int j=0; j<num_nodes; j++){
+                for(int k=0; k<batch_size; k++){
+                    Z_b[j*batch_size + k] = Z[j*batch_size + k] - b[j];
                 }
             }
-        }
-        
-        A = model.layers[num_layers-i].A; // shape: (n[N], m)
-        
-        I_A_prev = malloc(num_nodes_prev*batch_size*sizeof(float));
-        
-        for(int j=0; j<num_nodes_prev*batch_size; j++){
-            I_A_prev[j] = 1 - A_prev[j];
-        }
-        
-        dZ_prev = model.layers[num_layers-(i+1)].dZ; // shape: (n[N-1], m)
-        dZ_prev = malloc(num_nodes_prev*batch_size*sizeof(float));
-        
+            
 #pragma omp parallel for collapse(2)
-        for (int j=0; j<num_nodes_prev; j++){
-            for (int k=0; k<batch_size; k++){
-                dZ_prev[j*batch_size + k] = 0.0;
-                for (int m=0; m<batch_size; m++){
-                    dZ_prev[j*batch_size + k] += I_A_prev[j*batch_size + m] * dZZ_b[k*batch_size + m];
+            for (int j=0; j<batch_size; j++){
+                for (int k=0; k<batch_size; k++){
+                    dZZ_b[j*batch_size + k] = 0.0;
+                    for (int n=0; n<num_nodes; n++){
+                        //dZZ_b[j*batch_size + k] += Z_b[j + n*batch_size] * dZ[k + n*batch_size];
+                        dZZ_b[j*batch_size + k] += dZ[j + n*batch_size] * Z_b[k + n*batch_size];
+                    }
                 }
             }
+            
+            A = model.layers[num_layers-i].A; // shape: (n[N], m)
+            
+            I_A_prev = malloc(num_nodes_prev*batch_size*sizeof(float));
+            
+            for(int j=0; j<num_nodes_prev*batch_size; j++){
+                I_A_prev[j] = 1 - A_prev[j];
+            }
+            
+            dZ_prev = model.layers[num_layers-(i+1)].dZ; // shape: (n[N-1], m)
+            dZ_prev = malloc(num_nodes_prev*batch_size*sizeof(float));
+            
+#pragma omp parallel for collapse(2)
+            for (int j=0; j<num_nodes_prev; j++){
+                for (int k=0; k<batch_size; k++){
+                    dZ_prev[j*batch_size + k] = 0.0;
+                    for (int m=0; m<batch_size; m++){
+                        dZ_prev[j*batch_size + k] += I_A_prev[j*batch_size + m] * dZZ_b[k*batch_size + m];
+                    }
+                }
+            }
+            
+            model.layers[num_layers-(i+1)].dZ = dZ_prev;
+            
         }
-        
-        model.layers[num_layers-(i+1)].dZ = dZ_prev;
-        
     }
     
     return model;
