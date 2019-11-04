@@ -35,6 +35,11 @@ struct model DDClassifier(struct model model, int* Y, int num_samples, int batch
     /*Train model*/
     for (int i=0; i<epochs; i++){
         
+        
+        if (rank==2){
+            printf("\n\nEpoch: %d/%d\n", i+1, epochs);
+        }
+               
         float epoch_loss = 0.0;
         
         /*Cannot be parallelized*/
