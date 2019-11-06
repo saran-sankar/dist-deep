@@ -22,27 +22,7 @@ struct output FProp(float * input, struct layer layer, int batch_size, int rank,
     
     float* sub_W = malloc(cols*sizeof(float));  /*sizeof(W[0])*/
     
-    MPI_Scatter(
-                W,
-                cols,
-                MPI_FLOAT,
-                sub_W,
-                cols,
-                MPI_FLOAT,
-                0,
-                MPI_COMM_WORLD);
-    
     float* sub_input = malloc(batch_size * sizeof(float));
-    
-    MPI_Scatter(
-                input,
-                batch_size,
-                MPI_FLOAT,
-                sub_input,
-                batch_size,
-                MPI_FLOAT,
-                0,
-                MPI_COMM_WORLD);
     
     MPI_Barrier(MPI_COMM_WORLD);
     
@@ -60,6 +40,14 @@ struct output FProp(float * input, struct layer layer, int batch_size, int rank,
         MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
         
         MPI_Get_processor_name(processor_name, &resultlen);
+        
+        for (int i=0; i<cols; i++){
+            sub_W[i] = W[rank*cols + i];
+        }
+        
+        for (int i=0; i<batch_size; i++){
+            sub_input[i] = input[rank*batch_size + i];
+        }
         
         if (verbose>1){
             printf("Pocess %d of %d calculating Z on %s\n", rank, nprocs, processor_name);
