@@ -20,10 +20,6 @@ struct output FProp(float * input, struct layer layer, int batch_size, int rank,
     float* b = layer.b;
     int cols = layer.num_nodes;
     
-    float* sub_W = malloc(cols*sizeof(float));  /*sizeof(W[0])*/
-    
-    float* sub_input = malloc(batch_size * sizeof(float));
-    
     MPI_Barrier(MPI_COMM_WORLD);
     
     float* sub_Z = malloc(cols * batch_size * sizeof(float));
@@ -41,14 +37,6 @@ struct output FProp(float * input, struct layer layer, int batch_size, int rank,
         
         MPI_Get_processor_name(processor_name, &resultlen);
         
-        for (int i=0; i<cols; i++){
-            sub_W[i] = W[rank*cols + i];
-        }
-        
-        for (int i=0; i<batch_size; i++){
-            sub_input[i] = input[rank*batch_size + i];
-        }
-        
         if (verbose>1){
             printf("Pocess %d of %d calculating Z on %s\n", rank, nprocs, processor_name);
             fflush(stdout);
@@ -57,7 +45,7 @@ struct output FProp(float * input, struct layer layer, int batch_size, int rank,
 #pragma omp parallel for collapse(2)
         for (int i=0; i<cols; i++){
             for (int j=0; j<batch_size; j++){
-                sub_Z[i*batch_size + j] = sub_W[i] * sub_input[j];
+                sub_Z[i*batch_size + j] = W[rank*cols + i] * input[rank*batch_size + j];
             }
         }
         
