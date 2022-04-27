@@ -1,2 +1,2 @@
 # dist-deep
-Parallelized and distributed deep learning framework
+Distributed deep learning framework
